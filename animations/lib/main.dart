@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:animations/src/misc/zigzag_animation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -102,9 +103,14 @@ final miscDemos = [
     builder: (context) => const RepeatingAnimationDemo(),
   ),
   Demo(
+    name: 'ZigZag Animation',
+    route: ZigZagAnimationDemo.routeName,
+    builder: (context) => const ZigZagAnimationDemo(),
+  ),
+  Demo(
     name: 'Spring Physics',
-    route: PhysicsCardDragDemo.routeName,
-    builder: (context) => const PhysicsCardDragDemo(),
+    route: PhysicsDragDemo.routeName,
+    builder: (context) => const PhysicsDragDemo(),
   ),
   Demo(
     name: 'AnimatedList',

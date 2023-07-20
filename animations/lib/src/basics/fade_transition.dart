@@ -25,7 +25,7 @@ class _FadeTransitionDemoState extends State<FadeTransitionDemo>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 500),
+      duration: const Duration(milliseconds: 1500),
     );
 
     _curve = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
@@ -56,17 +56,18 @@ class _FadeTransitionDemoState extends State<FadeTransitionDemo>
           children: [
             FadeTransition(
               opacity: _animation,
-              child: const Icon(
-                Icons.star,
-                color: Colors.amber,
-                size: 300,
+              child: Image.asset(
+                'assets/ghost.png',
+                fit: BoxFit.cover,
+                height: 350,
               ),
             ),
             ElevatedButton(
               child: const Text('animate'),
               onPressed: () => setState(() {
-                _controller.animateTo(1.0).then<TickerFuture>(
-                    (value) => _controller.animateBack(0.0));
+                _controller.animateTo(1.0).then<TickerFuture>((value) =>
+                    _controller.animateBack(0.0,
+                        duration: const Duration(milliseconds: 3000)));
               }),
             ),
           ],

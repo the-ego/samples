@@ -67,16 +67,20 @@ class _TweenSequenceDemoState extends State<TweenSequenceDemo>
         child: AnimatedBuilder(
           animation: animation,
           builder: (context, child) {
-            return MaterialButton(
-              color: animation.value,
-              onPressed: () async {
+            return GestureDetector(
+              onTap: () async {
                 await controller.forward();
                 controller.reset();
               },
-              child: child,
+              child: ColorFiltered(
+                colorFilter: ColorFilter.mode(
+                    animation.value ?? Colors.transparent, BlendMode.modulate),
+                child: Image.asset(
+                  'assets/ghost.png',
+                ),
+              ),
             );
           },
-          child: const Text('Animate', style: TextStyle(color: Colors.white)),
         ),
       ),
     );

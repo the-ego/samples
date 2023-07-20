@@ -62,6 +62,14 @@ class _AnimationControllerDemoState extends State<AnimationControllerDemo>
           mainAxisSize: MainAxisSize.min,
           children: [
             ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 100),
+              child: Image.asset(
+                'assets/ghost.png',
+                height: (MediaQuery.of(context).size.height / 1.5) *
+                    controller.value,
+              ),
+            ),
+            ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 200),
               child: Text(
                 controller.value.toStringAsFixed(2),

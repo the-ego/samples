@@ -48,28 +48,28 @@ class _AnimatedBuilderDemoState extends State<AnimatedBuilderDemo>
         child: AnimatedBuilder(
           animation: animation,
           builder: (context, child) {
-            return ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: animation.value,
-              ),
-              child: child,
-              onPressed: () {
-                switch (controller.status) {
-                  case AnimationStatus.completed:
-                    controller.reverse();
-                  default:
-                    controller.forward();
-                }
-              },
-            );
+            return GestureDetector(
+                onTap: () async {
+                  switch (controller.status) {
+                    case AnimationStatus.completed:
+                      controller.reverse();
+                    default:
+                      controller.forward();
+                  }
+                },
+                child: ColorFiltered(
+                  colorFilter: ColorFilter.mode(
+                      animation.value ?? Colors.transparent,
+                      BlendMode.modulate),
+                  child: child,
+                ));
           },
           // AnimatedBuilder can also accept a pre-built child Widget which is useful
           // if there is a non-animated Widget contained within the animated widget.
           // This can improve performance since this widget doesn't need to be rebuilt
           // when the animation changes.
-          child: const Text(
-            'Change Color',
-            style: TextStyle(color: Colors.white),
+          child: Image.asset(
+            'assets/ghost.png',
           ),
         ),
       ),

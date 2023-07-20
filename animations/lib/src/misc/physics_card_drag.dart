@@ -5,9 +5,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
-class PhysicsCardDragDemo extends StatelessWidget {
-  const PhysicsCardDragDemo({super.key});
-  static const String routeName = 'misc/physics_card';
+class PhysicsDragDemo extends StatelessWidget {
+  const PhysicsDragDemo({super.key});
+  static const String routeName = 'misc/physics_drag';
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,7 @@ class PhysicsCardDragDemo extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Spring Physics'),
       ),
-      body: DraggableCard(
+      body: Draggable(
         child: Image.asset(
           'assets/ghost.png',
           fit: BoxFit.cover,
@@ -28,15 +28,15 @@ class PhysicsCardDragDemo extends StatelessWidget {
 
 /// A draggable card that moves back to [Alignment.center] when it's
 /// released.
-class DraggableCard extends StatefulWidget {
-  const DraggableCard({required this.child, super.key});
+class Draggable extends StatefulWidget {
+  const Draggable({required this.child, super.key});
   final Widget child;
 
   @override
-  State<DraggableCard> createState() => _DraggableCardState();
+  State<Draggable> createState() => _DraggableState();
 }
 
-class _DraggableCardState extends State<DraggableCard>
+class _DraggableState extends State<Draggable>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
@@ -109,9 +109,7 @@ class _DraggableCardState extends State<DraggableCard>
           _runAnimation(details.velocity.pixelsPerSecond, size),
       child: Align(
         alignment: _dragAlignment,
-        child: Card(
-          child: widget.child,
-        ),
+        child: widget.child,
       ),
     );
   }

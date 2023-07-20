@@ -26,6 +26,7 @@ class _CurvedAnimationDemoState extends State<CurvedAnimationDemo>
   late final AnimationController controller;
   late final Animation<double> animationRotation;
   late final Animation<Offset> animationTranslation;
+
   static const _duration = Duration(seconds: 4);
   List<CurveChoice> curves = const [
     CurveChoice(curve: Curves.bounceIn, name: 'Bounce In'),
@@ -60,7 +61,7 @@ class _CurvedAnimationDemoState extends State<CurvedAnimationDemo>
     );
     animationRotation = Tween<double>(
       begin: 0,
-      end: 2 * math.pi,
+      end: 1 * math.pi,
     ).animate(curvedAnimation)
       ..addListener(() {
         setState(() {});
@@ -90,76 +91,78 @@ class _CurvedAnimationDemoState extends State<CurvedAnimationDemo>
       appBar: AppBar(
         title: const Text('Curved Animation'),
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 20.0),
-          Text(
-            'Select Curve for forward motion',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          DropdownButton<CurveChoice>(
-            items: curves.map((curve) {
-              return DropdownMenuItem<CurveChoice>(
-                  value: curve, child: Text(curve.name));
-            }).toList(),
-            onChanged: (newCurve) {
-              if (newCurve != null) {
-                setState(() {
-                  selectedForwardCurve = newCurve;
-                  curvedAnimation.curve = selectedForwardCurve.curve;
-                });
-              }
-            },
-            value: selectedForwardCurve,
-          ),
-          const SizedBox(height: 15.0),
-          Text(
-            'Select Curve for reverse motion',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          DropdownButton<CurveChoice>(
-            items: curves.map((curve) {
-              return DropdownMenuItem<CurveChoice>(
-                  value: curve, child: Text(curve.name));
-            }).toList(),
-            onChanged: (newCurve) {
-              if (newCurve != null) {
-                setState(() {
-                  selectedReverseCurve = newCurve;
-                  curvedAnimation.reverseCurve = selectedReverseCurve.curve;
-                });
-              }
-            },
-            value: selectedReverseCurve,
-          ),
-          const SizedBox(height: 35.0),
-          Transform.rotate(
-            angle: animationRotation.value,
-            child: Center(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 20.0),
+            Text(
+              'Select Curve for forward motion',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            DropdownButton<CurveChoice>(
+              items: curves.map((curve) {
+                return DropdownMenuItem<CurveChoice>(
+                    value: curve, child: Text(curve.name));
+              }).toList(),
+              onChanged: (newCurve) {
+                if (newCurve != null) {
+                  setState(() {
+                    selectedForwardCurve = newCurve;
+                    curvedAnimation.curve = selectedForwardCurve.curve;
+                  });
+                }
+              },
+              value: selectedForwardCurve,
+            ),
+            const SizedBox(height: 15.0),
+            Text(
+              'Select Curve for reverse motion',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            DropdownButton<CurveChoice>(
+              items: curves.map((curve) {
+                return DropdownMenuItem<CurveChoice>(
+                    value: curve, child: Text(curve.name));
+              }).toList(),
+              onChanged: (newCurve) {
+                if (newCurve != null) {
+                  setState(() {
+                    selectedReverseCurve = newCurve;
+                    curvedAnimation.reverseCurve = selectedReverseCurve.curve;
+                  });
+                }
+              },
+              value: selectedReverseCurve,
+            ),
+            const SizedBox(height: 35.0),
+            Transform.rotate(
+              angle: animationRotation.value,
+              child: Center(
+                child: Image.asset(
+                  'assets/ghost.png',
+                  fit: BoxFit.cover,
+                  height: 100,
+                ),
+              ),
+            ),
+            const SizedBox(height: 35.0),
+            FractionalTranslation(
+              translation: animationTranslation.value,
               child: Image.asset(
                 'assets/ghost.png',
                 fit: BoxFit.cover,
                 height: 100,
               ),
             ),
-          ),
-          const SizedBox(height: 35.0),
-          FractionalTranslation(
-            translation: animationTranslation.value,
-            child: Image.asset(
-              'assets/ghost.png',
-              fit: BoxFit.cover,
-              height: 100,
+            const SizedBox(height: 25.0),
+            ElevatedButton(
+              onPressed: () {
+                controller.forward();
+              },
+              child: const Text('Animate'),
             ),
-          ),
-          const SizedBox(height: 25.0),
-          ElevatedButton(
-            onPressed: () {
-              controller.forward();
-            },
-            child: const Text('Animate'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

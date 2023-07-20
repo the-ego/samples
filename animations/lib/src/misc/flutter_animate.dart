@@ -20,22 +20,36 @@ class FlutterAnimateDemo extends StatelessWidget {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(
-            "Hello Flutter Animate",
-            style: Theme.of(context).textTheme.headlineLarge,
-          )
-              .animate(
-                onPlay: (controller) => controller.repeat(),
-              )
-              .then(delay: 250.ms)
-              .fadeIn(duration: 500.ms)
-              .then(delay: 250.ms)
-              .shimmer(duration: 400.ms)
-              .then(delay: 250.ms)
-              .slide()
-              .then(delay: 250.ms)
-              .blur(duration: 500.ms)
-              .then(delay: 100.ms),
+          child: Center(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              verticalDirection: VerticalDirection.up,
+              direction: Axis.vertical,
+              children: [
+                Image.asset('assets/ghost.png',
+                        height: MediaQuery.of(context).size.height / 4)
+                    .animate(
+                      onPlay: (controller) => controller.repeat(),
+                    )
+                    .shake(hz: 2),
+                Text(
+                  "Hello Ghost Animate",
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
+              ],
+            )
+                .animate(
+                  onPlay: (controller) => controller.repeat(),
+                )
+                .then(delay: 250.ms)
+                .fadeIn(duration: 500.ms)
+                .then(delay: 250.ms)
+                .then(delay: 250.ms)
+                .slide()
+                .then(delay: 250.ms)
+                .blur(duration: 500.ms)
+                .then(delay: 100.ms),
+          ),
         ),
       ),
     );
