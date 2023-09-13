@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'dart:ui';
 
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit_config.dart';
@@ -29,18 +31,24 @@ class CaptureWidget extends StatefulWidget {
 }
 
 class _CaptureWidgetState extends State<CaptureWidget> with SingleTickerProviderStateMixin {
-  final GlobalKey _globalKey = GlobalKey();
+  final GlobalKey _containerKey = GlobalKey();
   VideoPlayerController? _videoPlayerController;
   String _videoPath = '';
-  String scale = '100:100';
+  double size = 200;
+  double ratio = 3;
+  String FILE_NAME = 'capture';
+  int TOTAL_FRAME = 60;
+  String get scale => '${size * ratio}:${size * ratio}';
+  Image? img;
   late AnimationController _animationController;
   late Animation<Color?> _colorAnimation;
+  Duration animationDuration = const Duration(seconds: 4);
 
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: animationDuration,
       vsync: this,
     );
     _colorAnimation = ColorTween(
@@ -53,133 +61,137 @@ class _CaptureWidgetState extends State<CaptureWidget> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: FutureBuilder(
-            future: _captureAnimation(),
-            builder: (context, snapshot) {
-              if (snapshot.hasData) {
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    Row(
-                      children: [
-                        if (_videoPath.isNotEmpty)
-                          ElevatedButton(
-                            child: const Text("Save"),
-                            onPressed: () async {
-                              final result = await ImageGallerySaver.saveFile(_videoPath);
-                              if (result['isSuccess']) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('저장 완료! ✅')));
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('저장 실패! ❌')));
-                              }
-                            },
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              InkWell(
+                onDoubleTap: _captureAnimation,
+                child: RepaintBoundary(
+                  key: _containerKey,
+                  child: AnimatedBuilder(
+                    animation: _colorAnimation,
+                    builder: (context, child) {
+                      return SizedBox(
+                        width: size,
+                        height: size,
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: size,
+                              height: size,
+                              color: _colorAnimation.value,
+                            ),
+                            const Center(child: Text('애니메이션'))
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_videoPath.isNotEmpty)
+                    ElevatedButton(
+                      child: const Text("Save"),
+                      onPressed: () async {
+                        final result = await ImageGallerySaver.saveFile(_videoPath);
+                        if (result['isSuccess']) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('저장 완료! ✅')));
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('저장 실패! ❌')));
+                        }
+                      },
+                    ),
+                  ElevatedButton(
+                    child: const Text('to Video'),
+                    onPressed: () async {
+                      await _fileToVideo(capturedImages);
+                      if (!(await File(_videoPath).exists())) {
+                        print("파일이 존재하지 않습니다.");
+                        return;
+                      }
+                      _videoPlayerController = VideoPlayerController.file(File(_videoPath))
+                        ..initialize().then((_) {
+                          setState(() {
+                            _videoPlayerController?.play();
+                          });
+                        }, onError: (error) {
+                          print("Error initializing video player: $error");
+                        });
+                    },
+                  ),
+                ],
+              ),
+              Container(
+                child: _videoPlayerController?.value.isInitialized ?? false
+                    ? GestureDetector(
+                        onDoubleTap: () => _videoPlayerController?.play(),
+                        child: SizedBox(
+                          height: 200,
+                          width: 200,
+                          child: AspectRatio(
+                            aspectRatio: _videoPlayerController!.value.aspectRatio,
+                            child: VideoPlayer(_videoPlayerController!),
                           ),
-                        ElevatedButton(
-                          child: const Text('to Video'),
-                          onPressed: () async {
-                            await _fileToVideo(snapshot.data as List<String>);
-                            if (!(await File(_videoPath).exists())) {
-                              print("파일이 존재하지 않습니다.");
-                              return;
-                            }
-                            _videoPlayerController = VideoPlayerController.file(File(_videoPath))
-                              ..initialize().then((_) {
-                                setState(() {
-                                  _videoPlayerController?.play();
-                                });
-                              }, onError: (error) {
-                                print("Error initializing video player: $error");
-                              });
-                          },
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                height: 400,
+                child: GridView.builder(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 5.0,
+                    mainAxisSpacing: 5.0,
+                  ),
+                  itemCount: capturedImages.length,
+                  itemBuilder: (context, index) {
+                    String item = capturedImages[index];
+                    return Stack(
+                      children: [
+                        Image.file(File(item)),
+                        Text(
+                          item.split('/').last.split('.').first,
+                          style: const TextStyle(color: Colors.white, fontSize: 20),
                         ),
                       ],
-                    ),
-                    Container(
-                      child: _videoPlayerController?.value.isInitialized ?? false
-                          ? AspectRatio(
-                              aspectRatio: _videoPlayerController!.value.aspectRatio,
-                              child: VideoPlayer(_videoPlayerController!),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                    Expanded(
-                      child: GridView.builder(
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 5.0,
-                          mainAxisSpacing: 5.0,
-                        ),
-                        itemCount: snapshot.data!.length,
-                        itemBuilder: (context, index) {
-                          String item = snapshot.data![index];
-                          return Stack(
-                            children: [
-                              Image.file(File(item)),
-                              Text(
-                                item.split('/').last.split('.').first,
-                                style: const TextStyle(color: Colors.white, fontSize: 20),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              } else {
-                return Column(
-                  children: [
-                    ElevatedButton(
-                      onPressed: _captureAnimation,
-                      child: const Text('캡쳐하기'),
-                    ),
-                    RepaintBoundary(
-                      key: _globalKey,
-                      child: AnimatedBuilder(
-                        animation: _colorAnimation,
-                        builder: (context, child) {
-                          return Container(
-                            width: 200,
-                            height: 200,
-                            color: _colorAnimation.value,
-                            child: const Center(child: Text('애니메이션')),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                );
-              }
-            },
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Future<List<String>?> _captureAnimation() async {
-    List<String> capturedImages = [];
+  Directory? directory;
+  List<String> capturedImages = [];
+  void _captureAnimation() async {
+    capturedImages = [];
     // WidgetsBinding.instance.addPostFrameCallback((_) async {
-    final directory = await getTemporaryDirectory();
-    final totalFrames = 60;
+    directory = await getTemporaryDirectory();
 
-    for (int i = 0; i < totalFrames; i++) {
-      _animationController.value = i / (totalFrames - 1);
-      await Future.delayed(const Duration(milliseconds: 16));
+    Duration duration = animationDuration ~/ TOTAL_FRAME;
+    for (int i = 0; i < TOTAL_FRAME; i++) {
+      _animationController.value = i / (TOTAL_FRAME - 1);
+      Uint8List? byte = await capture(pixelRatio: ratio, delay: duration);
 
-      RenderRepaintBoundary? boundary = _globalKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-      scale = '${boundary?.size.width.toString()}: ${boundary?.size.height.toString()}';
-      if (boundary == null) continue;
-      ui.Image image = await boundary.toImage();
-      final imagePath = '${directory.path}/capture_${i.toString().padLeft(3, '0')}.png'; // 숫자를 3자리로 포맷
+      if (byte == null) continue;
+      final imagePath = '${directory?.path}/$FILE_NAME${(i + 1).toString()}.png';
       final imageFile = File(imagePath);
-      await imageFile.writeAsBytes(
-          await image.toByteData(format: ui.ImageByteFormat.png).then((byteData) => byteData!.buffer.asUint8List()));
+      await imageFile.writeAsBytes(byte);
       capturedImages.add(imagePath); // 경로를 리스트에 추가
     }
-    // });
-    return capturedImages;
+
+    setState(() {});
   }
 
   @override
@@ -192,6 +204,45 @@ class _CaptureWidgetState extends State<CaptureWidget> with SingleTickerProvider
   Future<File> getVideoFile() async {
     Directory documentsDirectory = await getApplicationDocumentsDirectory();
     return File("${documentsDirectory.path}/video.mp4");
+  }
+
+  Future<Uint8List?> capture({double pixelRatio = 3, Duration delay = const Duration(milliseconds: 20)}) {
+    return Future.delayed(delay, () async {
+      try {
+        ui.Image? image = await captureAsUiImage(
+          pixelRatio,
+          Duration.zero,
+        );
+        ByteData? byteData = await image?.toByteData(format: ui.ImageByteFormat.png);
+        image?.dispose();
+
+        Uint8List? pngBytes = byteData?.buffer.asUint8List();
+
+        return pngBytes;
+      } on Exception {
+        throw (Exception);
+      }
+    });
+  }
+
+  Future<ui.Image?> captureAsUiImage(double pixelRatio, Duration delay) {
+    return Future.delayed(delay, () async {
+      try {
+        var findRenderObject = _containerKey.currentContext?.findRenderObject();
+        if (findRenderObject == null) {
+          return null;
+        }
+        RenderRepaintBoundary boundary = findRenderObject as RenderRepaintBoundary;
+        BuildContext? context = _containerKey.currentContext;
+        if (context == null) {
+          return null;
+        }
+        ui.Image image = await boundary.toImage(pixelRatio: pixelRatio);
+        return image;
+      } on Exception {
+        throw (Exception);
+      }
+    });
   }
 
   void deleteFile(File file) {
@@ -217,7 +268,7 @@ class _CaptureWidgetState extends State<CaptureWidget> with SingleTickerProvider
 
     final videoFile = await getVideoFile();
     deleteFile(videoFile);
-    final ffmpegCommand = generateEncodeVideoScript(imagePaths, videoFile.path, 'mpeg4', 'yuv420p', '');
+    final ffmpegCommand = generateEncodeVideoScript(videoFile.path);
     FFmpegKit.executeAsync(ffmpegCommand, (session) async {
       final state = FFmpegKitConfig.sessionStateToString(await session.getState());
       final returnCode = await session.getReturnCode();
@@ -225,7 +276,7 @@ class _CaptureWidgetState extends State<CaptureWidget> with SingleTickerProvider
       final duration = await session.getDuration();
 
       if (ReturnCode.isSuccess(returnCode)) {
-        print("Encode completed successfully in $duration milliseconds; playing video.");
+        print("Encode completed successfully in $duration seconds; playing video.");
         _videoPlayerController = VideoPlayerController.file(videoFile)
           ..initialize().then((_) {
             setState(() {});
@@ -240,22 +291,8 @@ class _CaptureWidgetState extends State<CaptureWidget> with SingleTickerProvider
   }
 
   generateEncodeVideoScript(
-      List<String> imagePaths, String videoFilePath, String videoCodec, String pixelFormat, String customOptions) {
-    String inputOptions = "";
-    String filterOptions = "";
-
-    for (int i = 0; i < imagePaths.length; i++) {
-      inputOptions += "-loop 1 -t 1 -i '${imagePaths[i]}' ";
-      filterOptions += "[$i:v]scale=$scale,setsar=1[v$i]; ";
-    }
-
-    String concatOptions = "";
-    for (int i = 0; i < imagePaths.length; i++) {
-      concatOptions += "[v$i]";
-    }
-
-    concatOptions += "concat=n=${imagePaths.length}:v=1:a=0[v]";
-
-    return "$inputOptions-filter_complex \"$filterOptions$concatOptions\" -map [v] -c:v $videoCodec -pix_fmt $pixelFormat -b:v 3000k  -r 30 $customOptions$videoFilePath";
+    String videoFilePath,
+  ) {
+    return "-framerate $TOTAL_FRAME/${animationDuration.inSeconds} -i '${directory?.path}/$FILE_NAME%d.png' -vf: scale=$scale -q 1 -b:v 2M -maxrate 2M -bufsize 1M  $videoFilePath";
   }
 }
